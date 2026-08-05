@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="robots" content="noindex">
-<title>ことのは学園ものがたり</title>
+<title>柏女学園ものがたり</title>
 <style>
 :root{
   --sakura:#ff9ab5; --sakura2:#ff7ba3; --sora:#8fd3f4; --cream:#fffaf2; --ink:#4a3b46;
@@ -62,6 +62,12 @@ button{font-family:inherit;cursor:pointer;border:none;color:inherit}
 @keyframes statup{0%,100%{background:#fff}40%{background:#fff0a8;transform:scale(1.1)}}
 .hensa{text-align:center;font-size:11px;font-weight:800;color:#8a7a84;margin-top:5px}
 .hensa b{color:var(--sakura2);font-size:15px}
+.seen{display:flex;align-items:center;justify-content:center;gap:6px;font-size:10px;font-weight:800;
+  color:#a4909b;margin-top:3px}
+.seen b{color:#7a6a74}
+.seen .sbar{width:88px;height:6px;background:#f0e4ea;border-radius:99px;overflow:hidden}
+.seen .sbar i{display:block;height:100%;border-radius:99px;transition:width .4s;
+  background:linear-gradient(90deg,#a78bd6,#8fd3f4)}
 
 /* ===== メイン（学校） ===== */
 #scr-main{position:relative;z-index:2}
@@ -75,7 +81,7 @@ button{font-family:inherit;cursor:pointer;border:none;color:inherit}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 #chara .av{width:92px;height:92px;border-radius:50%;background:#fff;border:4px solid var(--sakura);
   display:flex;align-items:center;justify-content:center;font-size:50px;margin:0 auto;
-  box-shadow:0 6px 14px #00000025}
+  box-shadow:0 6px 14px #00000025;overflow:hidden}
 #chara .nm{margin-top:4px;font-size:12px;font-weight:800;background:#fff;border-radius:99px;
   padding:3px 12px;display:inline-block;box-shadow:0 2px 6px #00000018}
 #tips{background:#ffffffcc;border-radius:14px;padding:8px 12px;font-size:12px;font-weight:700;
@@ -90,11 +96,15 @@ button{font-family:inherit;cursor:pointer;border:none;color:inherit}
 .cmd .d{font-size:9.5px;color:#a4909b;font-weight:700;margin-top:2px;display:block;line-height:1.4}
 .cmd.k{border-color:#ffc7a8}.cmd.g{border-color:#a8d8ff}
 .cmd.d2{border-color:#c9b6f0}.cmd.b{border-color:#a8e6c8}
+.cmd.locked{opacity:.5;filter:grayscale(.7)}
+#seasonDeco span{position:absolute;top:14px;font-size:20px;opacity:.85;
+  animation:sway 4s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(9px) rotate(6deg)}}
 .cmd.rest{border-color:#ffd9e4;background:#fff8fb}
 .cmd.play{border-color:#ffe2a8;background:#fffcf2}
-.cmd .who{position:absolute;top:-13px;right:-6px;width:38px;height:38px;border-radius:50%;
+.cmd .who{position:absolute;top:-13px;right:-6px;width:40px;height:40px;border-radius:50%;
   background:#fff;border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;
-  font-size:20px;box-shadow:0 3px 7px #00000025;animation:pop2 1.6s ease-in-out infinite}
+  font-size:20px;box-shadow:0 3px 7px #00000025;animation:pop2 1.6s ease-in-out infinite;overflow:hidden}
 @keyframes pop2{0%,100%{transform:scale(1)}50%{transform:scale(1.13)}}
 .cmd .heart{position:absolute;top:-9px;left:-4px;font-size:13px}
 .subrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding-bottom:16px}
@@ -107,14 +117,17 @@ button{font-family:inherit;cursor:pointer;border:none;color:inherit}
 .sbtn.ready{border-color:var(--gold);background:#fffbe8;animation:rdy 1.5s ease-in-out infinite}
 @keyframes rdy{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
 
+/* キャラ画像（円内に顔がくるよう上寄せ） */
+.cav{width:100%;height:100%;object-fit:cover;object-position:50% 12%;border-radius:50%;display:block}
 /* ===== 会話（ときメモ風） ===== */
 #dlg{position:fixed;inset:0;z-index:40;display:none;background:#00000055;backdrop-filter:blur(2px)}
 #dlg.on{display:block}
 #dlgChar{position:absolute;left:50%;bottom:216px;transform:translateX(-50%);text-align:center;
   animation:dlgin .32s}
 @keyframes dlgin{from{transform:translate(-50%,26px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
-#dlgChar .av{width:112px;height:112px;border-radius:50%;background:#fff;border:5px solid #fff;
-  display:flex;align-items:center;justify-content:center;font-size:62px;box-shadow:0 8px 22px #00000040}
+#dlgChar .av{width:128px;height:128px;border-radius:50%;background:#fff;border:5px solid #fff;
+  display:flex;align-items:center;justify-content:center;font-size:62px;box-shadow:0 8px 22px #00000040;
+  overflow:hidden}
 #dlgBox{position:absolute;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);
   width:min(500px,94vw);background:var(--cream);border:4px solid #fff;border-radius:22px;
   padding:14px 16px 12px;box-shadow:0 10px 26px #00000050;min-height:150px}
@@ -186,8 +199,8 @@ button{font-family:inherit;cursor:pointer;border:none;color:inherit}
 .pt .v{font-size:16px;font-weight:800;color:var(--sakura2)}
 .frow{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid var(--line);
   border-radius:16px;padding:10px;margin-bottom:9px}
-.frow .av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:26px;border:3px solid var(--line)}
+.frow .av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:26px;border:3px solid var(--line);overflow:hidden;background:#fff}
 .frow .info{flex:1}
 .frow .nm{font-size:14px;font-weight:800}
 .frow .rl{font-size:10px;color:#a4909b;font-weight:700}
@@ -232,15 +245,17 @@ button{font-family:inherit;cursor:pointer;border:none;color:inherit}
 
   <!-- タイトル -->
   <section class="scr on" id="scr-title">
-    <span class="em">🌸</span>
-    <h1>ことのは学園<br>ものがたり</h1>
-    <div class="sub">こくご部 青春シミュレーション</div>
+    <img src="assets/hero.png" alt="" style="width:150px;height:150px;object-fit:cover;
+      object-position:50% 8%;border-radius:50%;border:5px solid #fff;box-shadow:0 6px 18px #00000025;
+      margin-bottom:8px">
+    <h1>柏女学園<br>ものがたり</h1>
+    <div class="sub">文芸部 青春シミュレーション</div>
     <button class="tbtn" id="btnNew">はじめから ▶</button>
     <button class="tbtn sm" id="btnCont">つづきから</button>
     <button class="tbtn sm" id="btnAlbum">📔 おもいでアルバム</button>
     <p style="font-size:11px;color:#8a6a78;font-weight:700;margin-top:16px;line-height:1.9;
       background:#ffffffb0;border-radius:14px;padding:8px 14px">
-      1年間の学園生活。勉強して、友だちと遊んで、<br>部活して、学園祭。あなたはどんな1年にする？</p>
+      1年間の学園生活。勉強して、友だちと遊んで、<br>部活して、柏女祭。あなたはどんな1年にする？</p>
   </section>
 
   <!-- メイン -->
@@ -258,6 +273,8 @@ button{font-family:inherit;cursor:pointer;border:none;color:inherit}
         <div class="stat" id="st-hyogen"><div class="n">表現力</div><div class="v">8</div></div>
       </div>
       <div class="hensa">こくご偏差値 <b id="hHensa">38</b>　／　のこり <span id="hLeft">48</span>週</div>
+      <div class="seen">といた問題 <b id="hSeen">0/686</b>
+        <span class="sbar"><i id="hSeenBar" style="width:0%"></i></span></div>
     </div>
     <div class="wrap">
       <div id="stage">

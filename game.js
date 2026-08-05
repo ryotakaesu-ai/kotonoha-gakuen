@@ -6,32 +6,83 @@
 "use strict";
 
 /* ---------- 定数 ---------- */
+const SCHOOL = "柏女学園";
 const WEEKS = 48;
 const MONTHS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
 const weekLabel = w => `${MONTHS[Math.floor(w / 4)]}月${(w % 4) + 1}週`;
+const termOf = w => w <= 15 ? "1学期" : w <= 35 ? "2学期" : "3学期";
+/* 季節（背景・装飾が変わる） */
+function seasonOf(w) {
+  const m = MONTHS[Math.floor(w / 4)];
+  if (m === 4 || m === 5) return { k: "spring", sky: "#cdeeff,#ffe6ef", gr: "#a6dd8c", deco: ["🌸", "🌷", "🦋"], note: "桜がちり、あたらしい葉が のびてきた。" };
+  if (m === 6) return { k: "tsuyu", sky: "#bcd4e6,#dde9f0", gr: "#7ecb7e", deco: ["☔", "🐌", "💧"], note: "つゆ空。しっとりした 空気。" };
+  if (m === 7 || m === 8) return { k: "summer", sky: "#8fd8ff,#dff3ff", gr: "#63bf63", deco: ["🌻", "🌞", "🍉"], note: "せみの声が ひびいている。" };
+  if (m === 9 || m === 10) return { k: "autumn", sky: "#ffe0b8,#fff2dd", gr: "#c9b06a", deco: ["🍁", "🍂", "🌰"], note: "空が高い。ふうっと 風がすずしい。" };
+  if (m === 11) return { k: "lateautumn", sky: "#f5d6c0,#fdeee4", gr: "#c79a5e", deco: ["🍂", "🍁", "🦌"], note: "木々が いろづいて 落ち葉の 道になった。" };
+  if (m === 12 || m === 1 || m === 2) return { k: "winter", sky: "#d8ecff,#f2f8ff", gr: "#dfe8e2", deco: ["❄️", "⛄", "🧣"], note: "はく息が 白い。" };
+  return { k: "spring2", sky: "#ffe0ec,#fff2f6", gr: "#b6e09a", deco: ["🌸", "🌱", "🐦"], note: "また 桜が さきはじめた。" };
+}
+/* テスト1週間前は 部活動停止（本物の中学と同じ） */
+const TEST_WEEKS = [6, 12, 28, 31, 44];
+const isNoClub = w => TEST_WEEKS.includes(w + 1);
 
 const CHARS = {
-  sakura: { name: "さくら", em: "🌸", role: "幼なじみ・いつも元気", col: "#ff9ab5", like: "kanji",
+  sakura: { name: "さくら", em: "🌸", img: "assets/sakura.png", role: "幼なじみ・いつも元気", col: "#ff9ab5", like: "kanji",
     hello: ["おはよ〜！ 今日もいっしょに がんばろ！", "ねえねえ、放課後ひま？", "その調子その調子〜！"] },
-  miyabi: { name: "みやび", em: "📘", role: "学年1位のライバル", col: "#8fb8f0", like: "goi",
+  miyabi: { name: "みやび", em: "📘", img: "assets/miyabi.png", role: "学年1位のライバル", col: "#8fb8f0", like: "goi",
     hello: ["……ふん。まあ、せいぜい がんばりなさい。", "わたしに 追いつけるかしら。", "……その問題、まちがえないでよ。"] },
-  kaede: { name: "かえで", em: "🍁", role: "文芸部の部長・先輩", col: "#f5a76c", like: "bukatsu",
+  kaede: { name: "かえで", em: "🍁", img: "assets/kaede.png", role: "文芸部の部長・先輩", col: "#f5a76c", like: "bukatsu",
     hello: ["おっ、来たね。today も 特訓しよっか！", "ことばはね、心を運ぶ舟なんだよ。", "キミの文章、わたしは好きだな。"] },
-  hinata: { name: "ひなた", em: "🎀", role: "後輩・ふわふわ天然", col: "#ffc95e", like: "dokkai",
+  hinata: { name: "ひなた", em: "🎀", img: "assets/hinata.png", role: "後輩・ふわふわ天然", col: "#ffc95e", like: "dokkai",
     hello: ["せんぱぁい！ まってましたぁ〜", "きょうも おしえてください〜！", "せんぱいって すごいです…！"] },
+  /* --- 学校の大人・あこがれの先輩 --- */
+  tanin: { name: "水野先生", em: "👩‍🏫", img: "assets/tanin.png", role: "1年3組の担任", col: "#b39ddb", npc: true,
+    hello: ["宿題、ちゃんと やってきましたか？", "こまったことは いつでも 言ってね。"] },
+  komon: { name: "白石先生", em: "📗", img: "assets/komon.png", role: "部活の顧問", col: "#89b98f", npc: true,
+    hello: ["部活、たのしんでますか？", "むりは しないようにね。"] },
+  kaicho: { name: "ことは先輩", em: "🎗️", img: "assets/kaicho.png", role: "生徒会長・あこがれの先輩", col: "#9575cd",
+    hello: ["……あら、あなた。がんばってるわね。", "きみの書く文章、わたし 好きよ。"] },
+  /* --- 家族 --- */
+  haha: { name: "お母さん", em: "👩", img: "assets/haha.png", role: "家族", col: "#ffab91", family: true,
+    hello: ["おかえり！ おやつ あるわよ〜", "むりしてない？"] },
+  chichi: { name: "お父さん", em: "👨", img: "assets/chichi.png", role: "家族", col: "#90caf9", family: true,
+    hello: ["お、がんばってるな。", "父さんも 応援してるからな。"] },
+  minori: { name: "みのり", em: "🎒", img: "assets/minori.png", role: "妹・小学4年生", col: "#ffd54f", family: true,
+    hello: ["おねえちゃん、あそぼー！", "ねえねえ、これ おしえて！"] },
 };
-const CID = Object.keys(CHARS);
+/* 好感度の対象（友だち＋あこがれの先輩＋家族） */
+const CID = ["sakura", "miyabi", "kaede", "hinata"];
+const AFF_ALL = ["sakura", "miyabi", "kaede", "hinata", "kaicho", "haha", "chichi", "minori"];
+
+/* ---------- 部活（入部するものを選ぶ） ---------- */
+const CLUBS = {
+  bungei: { name: "文芸部", em: "🖋️", stat: "hyogen", exp: "h", d: "表現力が のびる",
+    cats: ["bungaku", "giongo", "gairai", "goyo"], desc: "小説や詩を書く。ことばで 表現する部。", buddy: "kaede" },
+  shinbun: { name: "新聞部", em: "📰", stat: "dokkai", exp: "d", d: "読解力が のびる",
+    cats: ["goku", "keigo", "bunpo", "jukugo"], desc: "取材して 記事を書く。読む力が つく部。", buddy: "kaicho" },
+  karuta: { name: "かるた部", em: "🎴", stat: "kanji", exp: "k", d: "漢字力が のびる",
+    cats: ["kaki", "doon", "dokun", "kana"], desc: "百人一首。反射と 漢字に強くなる部。", buddy: "sakura" },
+  hoso: { name: "放送部", em: "🎙️", stat: "goi", exp: "g", d: "語彙力が のびる",
+    cats: ["kanyo", "kotowaza", "yoji", "wago"], desc: "朗読とアナウンス。ことばの ひきだしが ふえる部。", buddy: "hinata" },
+};
 
 const CMDS = [
   { id: "kanji", em: "✏️", t: "漢字ドリル", d: "漢字力＋", cls: "k", stat: "kanji", exp: "k",
-    cats: ["kaki", "doon", "dokun", "yomi", "sanji", "kana"], hp: 14 },
+    cats: ["kaki", "doon", "dokun", "yomi"], hp: 14 },
   { id: "goi", em: "📚", t: "図書室", d: "語彙力＋", cls: "g", stat: "goi", exp: "g",
-    cats: ["kanyo", "kotowaza", "yoji", "taigi", "ruigi", "wago"], hp: 14 },
+    cats: ["kanyo", "kotowaza", "yoji", "taigi", "ruigi"], hp: 14 },
   { id: "dokkai", em: "🔍", t: "読解ゼミ", d: "読解力＋", cls: "d2", stat: "dokkai", exp: "d",
-    cats: ["bunpo", "fukushi", "keigo", "jukugo", "goku"], hp: 16 },
-  { id: "bukatsu", em: "🖋️", t: "文芸部", d: "表現力＋", cls: "b", stat: "hyogen", exp: "h",
-    cats: ["bungaku", "giongo", "goyo", "gairai", "bushu"], hp: 15 },
+    cats: ["bunpo", "fukushi", "keigo", "jukugo", "goku", "wago", "goyo"], hp: 16 },
+  { id: "bukatsu", em: "🖋️", t: "部活", d: "表現力＋", cls: "b", stat: "hyogen", exp: "h",
+    cats: ["bungaku", "giongo", "gairai", "bushu", "sanji", "kana"], hp: 15 },
 ];
+/* 入部した部活を コマンドに 反映する */
+function applyClub() {
+  const c = CLUBS[G.club] || CLUBS.bungei;
+  const cm = CMDS.find(x => x.id === "bukatsu");
+  cm.em = c.em; cm.t = c.name; cm.d = c.d; cm.stat = c.stat; cm.exp = c.exp;
+  cm.cats = c.cats.concat(["bushu", "sanji"]);
+}
 const STAT_NAME = { kanji: "漢字力", goi: "語彙力", dokkai: "読解力", hyogen: "表現力" };
 const EXP_NAME = { k: "漢字P", g: "語彙P", d: "読解P", h: "表現P" };
 const STAT_EXP = { kanji: "k", goi: "g", dokkai: "d", hyogen: "h" };
@@ -44,9 +95,10 @@ const DEF = () => ({
   st: { kanji: 8, goi: 8, dokkai: 8, hyogen: 8 },
   hp: 100, mood: 2,
   exp: { k: 0, g: 0, d: 0, h: 0 },
-  aff: { sakura: 0, miyabi: 0, hinata: 0, kaede: 0 },
+  aff: { sakura: 0, miyabi: 0, hinata: 0, kaede: 0, kaicho: 0, haha: 20, chichi: 20, minori: 30 },
+  club: "bungei",
   evDone: {}, place: {}, lastCmd: "", sameCnt: 0,
-  total: 0, correct: 0, bestCombo: 0, tests: [], slump: 0, dating: null,
+  total: 0, correct: 0, bestCombo: 0, tests: [], slump: 0, seen: {},
 });
 let G = null;
 const SAVE_KEY = "kotonohaSave", ALBUM_KEY = "kotonohaAlbum", OPT_KEY = "kotonohaOpt";
@@ -91,6 +143,13 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const hensachi = () => Math.round(36 + (G.st.kanji + G.st.goi + G.st.dokkai + G.st.hyogen) / 4 * 0.34);
 function show(id) { document.querySelectorAll(".scr").forEach(s => s.classList.remove("on")); $("scr-" + id).classList.add("on"); }
 function toast(m) { const t = document.createElement("div"); t.className = "toast"; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 1900); }
+/* キャラの見た目：画像があれば画像、なければ絵文字 */
+function avHTML(id, full) {
+  const c = CHARS[id]; if (!c) return "";
+  if (!c.img) return c.em;
+  const src = full ? c.img : c.img.replace(".png", "_face.png");
+  return `<img class="cav" src="${src}" alt="${c.name}">`;
+}
 function confetti(n = 34) {
   const e = ["🌸", "🎉", "✨", "⭐️", "💗", "🎊"];
   for (let i = 0; i < n; i++) { const c = document.createElement("div"); c.className = "conf"; c.textContent = pick(e); c.style.left = Math.random() * 100 + "vw"; c.style.animationDuration = (1.6 + Math.random() * 1.7) + "s"; c.style.animationDelay = Math.random() * .5 + "s"; document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
@@ -107,7 +166,7 @@ function openLine() {
   const who = L.who, txt = L.t, ch = L.choices;
   const c = who && CHARS[who];
   $("dlgChar").style.display = c ? "block" : "none";
-  if (c) { $("dlgAv").textContent = c.em; $("dlgAv").style.borderColor = c.col; }
+  if (c) { $("dlgAv").innerHTML = avHTML(who); $("dlgAv").style.borderColor = c.col; }
   $("dlgWho").style.display = c ? "block" : "none";
   if (c) { $("dlgWho").textContent = c.name; $("dlgWho").style.background = c.col; }
   $("dlgChoice").classList.remove("on"); $("dlgChoice").innerHTML = "";
@@ -148,6 +207,9 @@ function renderHud() {
   ["kanji", "goi", "dokkai", "hyogen"].forEach(k => { $("st-" + k).querySelector(".v").textContent = G.st[k]; });
   $("hHensa").textContent = hensachi();
   $("hLeft").textContent = WEEKS - G.week;
+  const sc = seenCount(), tot = QUESTIONS.length;
+  $("hSeen").textContent = sc + "/" + tot;
+  $("hSeenBar").style.width = (sc / tot * 100) + "%";
   const tp = G.exp.k + G.exp.g + G.exp.d + G.exp.h;
   $("tBdg").textContent = tp; $("tBdg").style.display = tp > 0 ? "inline-block" : "none";
   $("btnTrain").classList.toggle("ready", canTrain());
@@ -164,10 +226,12 @@ const TIPS = [
 ];
 function renderMain() {
   renderHud();
-  const c = CHARS[pick(CID)];
-  $("mainAv").textContent = c.em; $("mainAv").style.borderColor = c.col;
+  const cid = pick(CID), c = CHARS[cid];
+  $("mainAv").innerHTML = avHTML(cid); $("mainAv").style.borderColor = c.col;
   $("mainNm").textContent = pick(c.hello);
-  $("tips").textContent = "💡 " + TIPS[G.week % TIPS.length];
+  $("tips").textContent = (isNoClub(G.week) ? "📢 テスト1週間前！ 部活動は 停止中です。"
+    : G.week % 3 === 0 ? "🍃 " + seasonOf(G.week).note
+      : "💡 " + TIPS[G.week % TIPS.length]);
   // キャラ配置（パワプロ式：毎週ランダムに3人が練習場所に現れる）
   if (!G.place || G.place.w !== G.week) {
     const p = { w: G.week };
@@ -175,17 +239,34 @@ function renderMain() {
     shuffle(CID).slice(0, 3).forEach((id, i) => { p[cmdIds[i]] = id; });
     G.place = p;
   }
+  // 季節で 背景と 装飾が かわる
+  const se = seasonOf(G.week);
+  const bg = document.querySelector("#stage .bg");
+  bg.style.background = `linear-gradient(180deg,${se.sky})`;
+  document.querySelector("#stage .ground").style.background = se.gr;
+  let dc = document.getElementById("seasonDeco");
+  if (!dc) { dc = document.createElement("div"); dc.id = "seasonDeco"; document.getElementById("stage").appendChild(dc); }
+  dc.innerHTML = se.deco.map((e, i) => `<span style="left:${8 + i * 33}%;animation-delay:${i * .7}s">${e}</span>`).join("");
+
   const box = $("cmds"); box.innerHTML = "";
+  const noClub = isNoClub(G.week);
   CMDS.forEach(cm => {
     const b = document.createElement("button"); b.className = "cmd " + cm.cls;
     const who = G.place[cm.id];
-    b.innerHTML = `<span class="em">${cm.em}</span><span class="t">${cm.t}</span><span class="d">${cm.d}　体力-${cm.hp}</span>`
-      + (who ? `<span class="who" style="border-color:${CHARS[who].col}">${CHARS[who].em}</span><span class="heart">💗</span>` : "");
-    b.onclick = () => { sfx.tap(); doStudy(cm); };
+    const blocked = noClub && cm.id === "bukatsu";
+    if (blocked) b.classList.add("locked");
+    b.innerHTML = `<span class="em">${cm.em}</span><span class="t">${cm.t}</span>`
+      + `<span class="d">${blocked ? "テスト前で 部活動停止" : cm.d + "　体力-" + cm.hp}</span>`
+      + (who && !blocked ? `<span class="who" style="border-color:${CHARS[who].col}">${avHTML(who)}</span><span class="heart">💗</span>` : "");
+    b.onclick = () => {
+      sfx.tap();
+      if (blocked) { say([L(null, "📢 テスト1週間前なので 部活動は 停止中。\n今週は 勉強に 集中しよう！")]).then(renderMain); return; }
+      doStudy(cm);
+    };
     box.appendChild(b);
   });
   const rest = document.createElement("button"); rest.className = "cmd rest";
-  rest.innerHTML = `<span class="em">😴</span><span class="t">やすむ</span><span class="d">体力かいふく</span>`;
+  rest.innerHTML = `<span class="em">🏠</span><span class="t">おうちで すごす</span><span class="d">体力かいふく・家族イベント</span>`;
   rest.onclick = () => { sfx.tap(); doRest(); };
   box.appendChild(rest);
   const play = document.createElement("button"); play.className = "cmd play";
@@ -196,11 +277,45 @@ function renderMain() {
 }
 
 /* ---------- コマンド ---------- */
+/* ---------- おうちで すごす（家庭パート） ---------- */
+const HOME_EV = [
+  async () => {
+    await say([L("haha", "おかえり〜。ホットケーキ 焼いたのよ、食べる？"), L(null, "お母さんの おやつを 食べた。ほっとする あまさ。")]);
+    G.hp = clamp(G.hp + 55, 0, 100); G.mood = clamp(G.mood + 1, 0, 4); G.aff.haha = clamp(G.aff.haha + 8, 0, 100);
+  },
+  async () => {
+    await say([L("chichi", "お、まだ 起きてたのか。"), L("chichi", "……これ、駅前の本屋で 見つけたんだ。読んでみるか？"), L(null, "📕 お父さんが 本を 買ってきてくれた！")]);
+    ["k", "g", "d", "h"].forEach(k => G.exp[k] += 16); G.aff.chichi = clamp(G.aff.chichi + 10, 0, 100);
+  },
+  async () => {
+    const r = await say([L("minori", "おねえちゃーん！ この漢字、なんて読むの？"),
+    L(null, "妹の みのりが 宿題を 持ってきた。", [{ t: "教えてあげる", v: 1 }, { t: "今は 自分の勉強を…", v: 2 }])]);
+    if (r === 1) {
+      await say([L(null, "みのりに ことばを 教えてあげた。"), L("minori", "わかった！ おねえちゃん せんせいみたい！"),
+      L(null, "人に教えると、自分の 理解も 深まる。")]);
+      G.st.dokkai += 2; G.st.hyogen += 2; G.aff.minori = clamp(G.aff.minori + 14, 0, 100); G.mood = clamp(G.mood + 1, 0, 4);
+    } else {
+      await say([L("minori", "……ちぇ。わかった、じぶんで やる。"), L(null, "少し 集中して 勉強できた。")]);
+      ["k", "g", "d", "h"].forEach(k => G.exp[k] += 10); G.aff.minori = clamp(G.aff.minori - 4, 0, 100);
+    }
+    G.hp = clamp(G.hp + 30, 0, 100);
+  },
+  async () => {
+    await say([L(null, "🍚 today は 家族そろって 夕ごはん。"), L("chichi", "学校は どうだ？"), L("minori", "おねえちゃん、部活で なにしてるの〜？"),
+    L("haha", "ふふ、にぎやかね。"), L(null, "なんでもない 夜が、いちばん あたたかい。")]);
+    G.hp = 100; G.mood = clamp(G.mood + 1, 0, 4);
+    ["haha", "chichi", "minori"].forEach(k => G.aff[k] = clamp(G.aff[k] + 7, 0, 100));
+  },
+  async () => {
+    await say([L(null, "🛁 おふろに ゆっくり つかった。"), L(null, "一日の つかれが とけていく。")]);
+    G.hp = clamp(G.hp + 60, 0, 100); G.mood = clamp(G.mood + 1, 0, 4);
+  },
+];
 async function doRest() {
   const heal = 45 + Math.floor(Math.random() * 20);
   G.hp = clamp(G.hp + heal, 0, 100);
-  if (G.mood < 4 && Math.random() < .5) G.mood++;
-  await say([L(null, `ゆっくり やすんだ。体力が ${heal} かいふくした！`)]);
+  if (Math.random() < .65) { await pick(HOME_EV)(); }
+  else { if (G.mood < 4 && Math.random() < .5) G.mood++; await say([L(null, `おうちで ゆっくりした。体力が ${heal} かいふくした！`)]); }
   nextWeek();
 }
 async function doPlay() {
@@ -219,18 +334,38 @@ async function doPlay() {
 }
 async function doStudy(cm) {
   if (G.hp < 12) { await say([L(null, "つかれすぎて 集中できない…。今日は やすんだ方が よさそう。")]); renderMain(); return; }
-  await startQuiz(cm, G.place[cm.id], 5, false);
+  await startQuiz(cm, G.place[cm.id], 8, false);
   nextWeek();
 }
 
 /* ---------- クイズ ---------- */
 let Q = null, QRES = null;
 function catPool(cats) { const p = QUESTIONS.filter(q => cats.includes(q.t)); return p.length ? p : QUESTIONS; }
+/* 出題アルゴリズム：まだ出していない問題を最優先。
+   一巡しきるまで 同じ問題は 二度出さない（＝686問すべてが出る） */
+function pickQuestions(pool, n) {
+  if (!G.seen) G.seen = {};
+  const bucket = {};
+  pool.forEach(q => { const c = G.seen[q.id] || 0; (bucket[c] = bucket[c] || []).push(q); });
+  const out = [];
+  Object.keys(bucket).map(Number).sort((a, b) => a - b).forEach(c => {
+    if (out.length >= n) return;
+    shuffle(bucket[c]).forEach(q => { if (out.length < n) out.push(q); });
+  });
+  out.forEach(q => { G.seen[q.id] = (G.seen[q.id] || 0) + 1; });
+  saveSeen();
+  return shuffle(out);
+}
+const seenCount = () => G && G.seen ? Object.keys(G.seen).length : 0;
+/* 出題履歴は 周回をまたいで 引き継ぐ（何周かで 686問すべてに 出会える） */
+const SEEN_KEY = "kotonohaSeen";
+const saveSeen = () => { try { localStorage.setItem(SEEN_KEY, JSON.stringify(G.seen)); } catch (e) { } };
+const loadSeen = () => { try { return JSON.parse(localStorage.getItem(SEEN_KEY) || "{}"); } catch (e) { return {}; } };
 function startQuiz(cm, who, n, isTest) {
   return new Promise(res => {
     QRES = res;
     const pool = isTest ? QUESTIONS : catPool(cm.cats);
-    Q = { cm, who, qs: shuffle(pool).slice(0, n), i: 0, ok: 0, combo: 0, best: 0, lock: false, isTest };
+    Q = { cm, who, qs: pickQuestions(pool, n), i: 0, ok: 0, combo: 0, best: 0, lock: false, isTest };
     $("qTag").textContent = isTest ? "📝 テスト" : cm.em + " " + cm.t;
     $("qCheer").innerHTML = who ? `<span style="color:${CHARS[who].col}">${CHARS[who].em} ${CHARS[who].name}と いっしょ！</span>` : "";
     const bonus = [];
@@ -462,37 +597,120 @@ async function endTest() {
     finishQuiz();
   };
 }
+/* 通知表（学期末）5段階評定 */
+function hyotei() {
+  const avg = (G.st.kanji + G.st.goi + G.st.dokkai + G.st.hyogen) / 4;
+  return avg >= 78 ? 5 : avg >= 60 ? 4 : avg >= 42 ? 3 : avg >= 25 ? 2 : 1;
+}
+async function tsuchihyo(term) {
+  const h = hyotei(), hs = hensachi();
+  const memo = { 5: "たいへん よくできました。ことばへの 感度が すばらしい。", 4: "よくがんばりました。この調子で つづけましょう。", 3: "基礎は 身についています。もう一歩 ふみこもう。", 2: "苦手な分野に くり返し 取り組みましょう。", 1: "まずは 毎日 少しずつ 続けることから。" }[h];
+  await say([
+    L("tanin", `${term}、おつかれさま。通知表を わたしますね。`),
+    L(null, `📋 国語　評定 ${h} ／ 5　（こくご偏差値 ${hs}）`),
+    L("tanin", `所見：${memo}`),
+  ]);
+  // 家に持ち帰る
+  await say([
+    L("haha", h >= 4 ? "あら〜！ すごいじゃない！ 今日は ごちそうね！" : h >= 3 ? "うん、がんばってるね。お母さん ちゃんと 見てるよ。" : "……だいじょうぶ。あせらなくて いいからね。"),
+    L("minori", h >= 4 ? "おねえちゃん すごーい！ わたしも がんばる！" : "おねえちゃん、いっしょに 勉強しよ！"),
+  ]);
+  ["haha", "minori"].forEach(k => G.aff[k] = clamp(G.aff[k] + 5, 0, 100));
+  if (h >= 4) { G.mood = 4; confetti(20); }
+}
+/* 三者面談（お母さん＋担任＋自分） */
+async function sansha() {
+  const hs = hensachi();
+  await say([
+    L(null, "🪑 三者面談の日。となりに お母さんが すわっている。"),
+    L("tanin", `${SCHOOL}に入って 3か月。国語は こくご偏差値 ${hs} です。`),
+    L("tanin", hs >= 58 ? "ことばへの 感度が とても 育っています。すばらしい。"
+      : hs >= 48 ? "少しずつ 力が ついてきています。この調子で。"
+        : "基礎の 積み重ねを 大事に していきましょう。"),
+    L("haha", "先生、この子 家でも ちゃんと やってるみたいで…"),
+  ]);
+  const r = await say([L(null, "夏休みの 目標を 言おう。", [
+    { t: "苦手を なくしたい", v: 1 }, { t: "友だちと 高めあいたい", v: 2 }, { t: "本を たくさん 読みたい", v: 3 }])]);
+  if (r === 1) { ["k", "g", "d", "h"].forEach(k => G.exp[k] += 22); await say([L("tanin", "いいですね。にがてと 向き合うのが いちばん 伸びます。")]); }
+  else if (r === 2) { CID.forEach(id => G.aff[id] = clamp(G.aff[id] + 8, 0, 100)); await say([L("tanin", "友だちは 最高の 先生ですよ。")]); }
+  else { G.st.dokkai += 3; G.st.hyogen += 3; await say([L("tanin", "読書は ぜんぶの 教科の 土台に なります。")]); }
+  G.aff.haha = clamp(G.aff.haha + 10, 0, 100);
+  await say([L("haha", "……大きくなったね。お母さん、うれしい。")]);
+}
 const FIXED = {
-  6: async () => { await doTest("1学期 中間テスト", "はじめての テスト！"); },
-  15: async () => { await doTest("1学期 期末テスト", "夏休みが 見えてきた！"); },
+  4: async () => {
+    await say([L(null, "🎏 ゴールデンウィーク！"), L(null, "しっかり 休んで、体力が 全回復した。")]);
+    G.hp = 100; G.mood = clamp(G.mood + 1, 0, 4);
+  },
+  6: async () => { await doTest("1学期 中間テスト", "はじめての 定期テスト！"); },
+  8: async () => {
+    await say([L(null, "👚 6月1日、衣がえ。"), L("sakura", "夏服になると、なんだか 気分も かわるよね！")]);
+  },
+  12: async () => { await doTest("1学期 期末テスト", "1学期の しめくくり！"); },
+  14: async () => { await sansha(); },
+  15: async () => {
+    await say([L(null, "🎋 1学期の 終業式。")]);
+    await tsuchihyo("1学期");
+  },
   16: async () => {
-    await say([L(null, "☀️ 夏休みが はじまった！"), L("kaede", "よーし、夏合宿だ！ この4週間は のびるよ〜！"), L(null, "🔥 8月のあいだ、練習の 効果が 1.5倍！")]);
+    await say([L(null, "☀️ 夏休みが はじまった！"), L("kaede", "よーし、夏の강化合宿だ！ この4週間は のびるよ〜！"), L(null, "🔥 8月のあいだ、練習の 効果が 1.5倍！")]);
     G.hp = 100;
   },
-  20: async () => { await say([L(null, "🌻 夏休みが 終わった。ひとまわり 成長した気がする。")]); },
+  20: async () => { await say([L(null, "🌻 2学期の 始業式。ひとまわり 成長した気がする。")]); },
+  22: async () => {
+    const r = await say([L(null, "🏃 体育祭！ あなたは 何に 出る？", [{ t: "リレーの アンカー", v: 1 }, { t: "応援団", v: 2 }, { t: "記録係（本を読む）", v: 3 }])]);
+    if (r === 1) { CID.forEach(id => G.aff[id] = clamp(G.aff[id] + 8, 0, 100)); G.hp = clamp(G.hp - 25, 0, 100); G.mood = 4; await say([L(null, "全力で 走りぬいた！ クラスが もりあがった！"), L(null, "💗 みんなとの なかよし度が 上がった！ でも つかれた…")]); }
+    else if (r === 2) { G.mood = 4; G.st.hyogen += 3; await say([L(null, "声を からして 応援した！"), L(null, "🖋️ 表現力＋3　やる気が 最高に！")]); }
+    else { ["k", "g", "d", "h"].forEach(k => G.exp[k] += 20); await say([L(null, "すみっこで 本を 読んでいた…"), L(null, "✨ けいけんちを もらった（でも すこし さみしい）")]); }
+  },
+  24: async () => { await say([L(null, "🧥 10月1日、衣がえ。"), L("miyabi", "……冬服のほうが、わたしは 好きよ。")]); },
   26: async () => {
-    const r = await say([L(null, "🎪 学園祭の 季節！ 文芸部は 部誌を 出すことに なった。"),
+    const r = await say([L(null, `🎪 柏女祭（文化祭）の 季節！ ${CLUBS[G.club].name}も 出しものを 作ることに なった。`),
     L("kaede", "キミには 表紙の ことばを たのみたいな。どうする？", [{ t: "全力で 書く！", v: 1 }, { t: "みんなで 考える", v: 2 }])]);
     if (r === 1) { G.st.hyogen += 7; G.hp = clamp(G.hp - 18, 0, 100); await say([L(null, "夜おそくまで ことばを えらんだ。"), L("kaede", "……すごい。これ、キミにしか 書けない ことばだよ。"), L(null, "🖋️ 表現力が 大きく上がった！")]); }
     else { CID.forEach(id => G.aff[id] = clamp(G.aff[id] + 10, 0, 100)); await say([L(null, "みんなで 意見を 出しあった。"), L("sakura", "こういうの たのしいね！"), L(null, "💗 みんなとの なかよし度が 上がった！")]); }
-    await say([L(null, "🎪 学園祭 当日 —"), L(null, "文芸部の 部誌は、たくさんの人が 手に取ってくれた。"), L(null, "ことばが だれかに とどく。その うれしさを 知った。")]);
+    await say([
+      L(null, "🎪 柏女祭 当日 —"),
+      L(null, `${CLUBS[G.club].name}の 出しものには、たくさんの人が 来てくれた。`),
+      L("kaicho", "……ちょっと いいかしら。"),
+      L("kaicho", "あなたたちの 出しもの、見せてもらったわ。"),
+      L("kaicho", "ことばを だいじに してるのが 伝わってきた。……いいものね。"),
+      L(null, "🎗️ 生徒会長の ことは先輩に みとめられた！"),
+      L(null, "ことばが だれかに とどく。その うれしさを 知った。"),
+    ]);
+    G.aff.kaicho = clamp(G.aff.kaicho + 20, 0, 100);
     G.mood = 4; confetti(40);
   },
   31: async () => { await doTest("2学期 期末テスト", "後半戦の 手ごたえは？"); },
-  38: async () => {
-    await say([L(null, "🎄 クリスマス。"), L(null, "みんなから メッセージカードが とどいた。"), L("sakura", "メリークリスマス！ 来年も よろしくね！"), L("miyabi", "……ま、まあ、よい年を。"), L("kaede", "よいお年を！ 冬休みも ちゃんと 休むんだよ。"), L("hinata", "せんぱい、だいすきです〜！")]);
+  35: async () => {
+    await say([L(null, "🎄 2学期の 終業式、そして クリスマス。")]);
+    await tsuchihyo("2学期");
+    await say([L(null, "みんなから メッセージカードが とどいた。"), L("sakura", "メリークリスマス！ 来年も よろしくね！"), L("miyabi", "……ま、まあ、よい年を。"), L("kaede", "よいお年を！ 冬休みも ちゃんと 休むんだよ。"), L("hinata", "せんぱい、だいすきです〜！")]);
     CID.forEach(id => G.aff[id] = clamp(G.aff[id] + 6, 0, 100)); G.hp = 100; G.mood = 4;
   },
-  40: async () => {
-    const r = await say([L(null, "⛩️ 初詣に 来た。何を おねがいする？", [{ t: "成績が 上がりますように", v: 1 }, { t: "みんなと ずっと 友だちで", v: 2 }])]);
+  36: async () => {
+    const r = await say([L(null, "⛩️ 3学期のはじめに、初詣。何を おねがいする？", [{ t: "成績が 上がりますように", v: 1 }, { t: "みんなと ずっと 友だちで", v: 2 }])]);
     if (r === 1) { ["k", "g", "d", "h"].forEach(k => G.exp[k] += 25); await say([L(null, "✨ やる気に 火が ついた！　けいけんちを もらった！")]); }
     else { CID.forEach(id => G.aff[id] = clamp(G.aff[id] + 12, 0, 100)); await say([L(null, "💗 みんなとの なかよし度が 上がった！")]); }
   },
-  45: async () => {
+  41: async () => {
     await say([L(null, "🍫 バレンタイン。"), L("sakura", "はい、友チョコ！ いつも ありがとね。"), L("hinata", "せんぱいにも どうぞ〜！"), L("kaede", "ふふ、日ごろの 感謝をこめて。"), L("miyabi", "……はい。べつに 特別な 意味は ないから。"), L(null, "💗 みんなから 気持ちを もらった！　絶好調に なった！")]);
     G.mood = 4; G.hp = 100; CID.forEach(id => G.aff[id] = clamp(G.aff[id] + 8, 0, 100));
   },
-  47: async () => { await doTest("学年末テスト", "1年間の 集大成！"); await ending(); },
+  44: async () => { await doTest("学年末テスト", "1年間の 集大成！"); },
+  46: async () => {
+    await say([
+      L(null, "🌸 3月。卒業式の日。"),
+      L(null, "かえで先輩が、3年間を おえて 学校を 去っていく。"),
+      L("kaede", "……なんだか、あっという間だったな。"),
+      L("kaede", "この部室で キミと 話した時間、ぜんぶ おぼえてるよ。"),
+      L("kaede", "文芸部、たのむね。……いってきます。"),
+      L(null, "先輩の うしろ姿が、桜のむこうに 小さくなっていった。"),
+    ]);
+    G.aff.kaede = clamp(G.aff.kaede + 15, 0, 100);
+    G.st.hyogen += 4; G.st.dokkai += 4;
+  },
+  47: async () => { await tsuchihyo("学年末"); await ending(); },
 };
 
 /* ---------- とっくん ---------- */
@@ -530,11 +748,21 @@ function renderTrain() {
 }
 function renderFriends() {
   const box = $("friendRows"); box.innerHTML = "";
-  CID.forEach(id => {
+  const c0 = CLUBS[G.club] || CLUBS.bungei;
+  const head = document.createElement("div");
+  head.className = "trow";
+  head.innerHTML = `<span class="em">${c0.em}</span><div class="info"><div class="nm">${c0.name}（入部中）</div>
+    <div style="font-size:10px;color:#a4909b;font-weight:700">${c0.desc}</div></div>`;
+  box.appendChild(head);
+  const sect = (t) => { const d = document.createElement("div"); d.style.cssText = "font-size:11px;font-weight:800;color:#a4909b;margin:10px 0 4px"; d.textContent = t; box.appendChild(d); };
+  sect("👭 ともだち");
+  AFF_ALL.forEach(id => {
+    if (id === "kaicho") sect("🎗️ あこがれの先輩");
+    if (id === "haha") sect("🏠 家族");
     const c = CHARS[id], a = G.aff[id];
     const lv = a >= 100 ? "💗 さいこうの なかま！" : a >= 75 ? "💖 とても なかよし" : a >= 50 ? "💕 なかよし" : a >= 25 ? "🙂 ともだち" : "🤝 クラスメイト";
     const row = document.createElement("div"); row.className = "frow";
-    row.innerHTML = `<div class="av" style="border-color:${c.col}">${c.em}</div>
+    row.innerHTML = `<div class="av" style="border-color:${c.col}">${avHTML(id)}</div>
       <div class="info"><div class="nm">${c.name}</div><div class="rl">${c.role}</div>
       <div class="hb"><i style="width:${a}%"></i></div><div class="lv">${lv}　${a}/100</div></div>`;
     box.appendChild(row);
@@ -562,6 +790,13 @@ async function ending() {
     hinata: "せんぱい！ わたし、せんぱいの こと ずっと わすれません！",
   }[best])]);
   await say([L(best, "また 来年も、いっしょに いようね。")]);
+  await say([
+    L(null, "— その夜、家で。"),
+    L("minori", "おねえちゃん、1年生 おわったんだね！"),
+    L("haha", "がんばったね。ほんとうに。"),
+    L("chichi", "……父さん、ちょっと 泣きそうだ。"),
+    L(null, "家族が、ずっと 見ていてくれた。"),
+  ]);
   if (h >= 60) await say([L(null, "✨ あなたの こくご偏差値は " + h + "。"), L(null, "1年前の 自分が 見たら、きっと おどろくだろう。")]);
   else await say([L(null, "あなたの こくご偏差値は " + h + "。"), L(null, "まだ 途中。でも たしかに 前に 進んでいる。")]);
   sfx.fanfare(); confetti(70);
@@ -577,7 +812,7 @@ async function ending() {
     <div style="text-align:center;color:#fff;font-size:22px;font-weight:800;margin:16px 0 10px;text-shadow:0 2px 0 #ff7ba3">
       🌸 ENDING 🌸</div>
     <div class="card">
-      <h2>ことのは学園 修了証</h2>
+      <h2>${SCHOOL} 修了証</h2>
       <div class="rank" style="color:${col}">${rk}</div>
       <div class="title" style="background:${col}">${title}</div>
       <table>
@@ -590,6 +825,8 @@ async function ending() {
         <tr><td>さいこう連続</td><td>${G.bestCombo}問</td></tr>
         <tr><td>テスト最高点</td><td>${bestTest}点</td></tr>
         <tr><td>いちばんの なかま</td><td>${bc.em} ${bc.name}</td></tr>
+        <tr><td>入部した部活</td><td>${(CLUBS[G.club] || CLUBS.bungei).em} ${(CLUBS[G.club] || CLUBS.bungei).name}</td></tr>
+        <tr><td>家族との きずな</td><td>${Math.round((G.aff.haha + G.aff.chichi + G.aff.minori) / 3)} / 100</td></tr>
       </table>
       <div class="memo">${{
       sakura: "さくらとは、これからも ずっと 一緒に 走っていく。",
@@ -619,23 +856,45 @@ function renderAlbum() {
   }).join("");
 }
 
+/* ---------- 入部する部活を えらぶ ---------- */
+async function chooseClub() {
+  const ids = Object.keys(CLUBS);
+  const v = await say([L("komon", "どの部に する？", ids.map((k, i) => ({ t: `${CLUBS[k].em} ${CLUBS[k].name}（${CLUBS[k].d}）`, v: i })))]);
+  const id = ids[v == null ? 0 : v];
+  G.club = id; applyClub(); save();
+  const c = CLUBS[id], bud = CHARS[c.buddy];
+  await say([
+    L("komon", `${c.name}ね。いい選択だと 思うわ。`),
+    L(null, `📌 ${c.desc}`),
+    L(c.buddy, {
+      kaede: "おっ、入ってくれるんだ！ うれしいなあ。いっしょに 書こうね。",
+      kaicho: "……あら。あなた、見どころ あるじゃない。きたえてあげる。",
+      sakura: "えっ、いっしょの部！？ やった〜！ ぜったい たのしいよ！",
+      hinata: "せんぱいと 同じ部だぁ〜！ うれしいです〜！",
+    }[c.buddy]),
+    L(null, `🎽 ${c.name}に 入部した！（${bud.name}と 同じ部）`),
+  ]);
+  G.aff[c.buddy] = clamp(G.aff[c.buddy] + 10, 0, 100);
+}
+
 /* ---------- 起動 ---------- */
 $("btnNew").onclick = async () => {
   sfx.tap();
   if (loadSave() && !confirm("とちゅうの データが あります。消して はじめますか？")) return;
-  G = DEF(); save();
+  G = DEF(); G.seen = loadSeen(); save();
   await say([
-    L(null, "🌸 4月。あなたは 中学校に 入学した。"),
+    L(null, `🌸 4月。あなたは ${SCHOOL}に 入学した。`),
     L(null, "校門の 桜が、ひらひらと 舞っている。"),
     L("sakura", "おーい！ こっちこっち〜！"),
     L("sakura", "同じクラスだね！ よろしくね！"),
-    L(null, "教室で 先生が 言った。"),
-    L(null, "「1年後、みんなは どんな自分に なっていたい？」"),
+    L("tanin", "1年3組の 担任の 水野です。1年間 よろしくね。"),
+    L("tanin", "1年後、みんなは どんな自分に なっていたい？"),
     L(null, "— これは、あなたの 1年間の 物語。"),
-    L("kaede", "あっ、キミ。ちょっと いいかな？"),
-    L("kaede", "わたし 文芸部の 部長なんだ。よかったら 入らない？"),
-    L(null, "こうして、ことのは学園での 1年が はじまった。"),
+    L(null, "放課後。部活動の 見学に 来た。"),
+    L("komon", "あら、いらっしゃい。どの部に 入るか 決めた？"),
   ]);
+  await chooseClub();
+  await say([L(null, `こうして、${SCHOOL}での 1年が はじまった。`)]);
   const f = FIXED[0]; if (f) await f();
   renderMain();
 };

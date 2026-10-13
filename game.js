@@ -59,20 +59,20 @@ const CLUBS = {
   bungei: { name: "文芸部", em: "🖋️", stat: "hyogen", exp: "h", d: "表現力が のびる",
     cats: ["bungaku", "giongo", "gairai", "goyo"], desc: "小説や詩を書く。ことばで 表現する部。", buddy: "kaede" },
   shinbun: { name: "新聞部", em: "📰", stat: "dokkai", exp: "d", d: "読解力が のびる",
-    cats: ["goku", "keigo", "bunpo", "jukugo"], desc: "取材して 記事を書く。読む力が つく部。", buddy: "kaicho" },
+    cats: ["goku", "keigo", "bunpo", "shikibetsu", "aimai", "jukugo"], desc: "取材して 記事を書く。読む力が つく部。", buddy: "kaicho" },
   karuta: { name: "かるた部", em: "🎴", stat: "kanji", exp: "k", d: "漢字力が のびる",
-    cats: ["kaki", "doon", "dokun", "kana"], desc: "百人一首。反射と 漢字に強くなる部。", buddy: "sakura" },
+    cats: ["kaki", "kaki2", "doon", "dokun", "yomi2", "kana"], desc: "百人一首。反射と 漢字に強くなる部。", buddy: "sakura" },
   hoso: { name: "放送部", em: "🎙️", stat: "goi", exp: "g", d: "語彙力が のびる",
-    cats: ["kanyo", "kotowaza", "yoji", "wago"], desc: "朗読とアナウンス。ことばの ひきだしが ふえる部。", buddy: "hinata" },
+    cats: ["kanyo", "kotowaza", "chugoku", "yoji", "yojierr", "wago"], desc: "朗読とアナウンス。ことばの ひきだしが ふえる部。", buddy: "hinata" },
 };
 
 const CMDS = [
   { id: "kanji", em: "✏️", t: "漢字ドリル", d: "漢字力＋", cls: "k", stat: "kanji", exp: "k",
-    cats: ["kaki", "doon", "dokun", "yomi"], hp: 14 },
+    cats: ["kaki", "kaki2", "doon", "dokun", "yomi", "yomi2", "bushuimi", "yomikata"], hp: 14 },
   { id: "goi", em: "📚", t: "図書室", d: "語彙力＋", cls: "g", stat: "goi", exp: "g",
-    cats: ["kanyo", "kotowaza", "yoji", "taigi", "ruigi"], hp: 14 },
+    cats: ["kanyo", "kotowaza", "chugoku", "yoji", "yojierr", "taigi", "ruigi", "iro", "kokoro", "shoryaku"], hp: 14 },
   { id: "dokkai", em: "🔍", t: "読解ゼミ", d: "読解力＋", cls: "d2", stat: "dokkai", exp: "d",
-    cats: ["bunpo", "fukushi", "keigo", "jukugo", "goku", "wago", "goyo"], hp: 16 },
+    cats: ["bunpo", "shikibetsu", "aimai", "fukushi", "keigo", "jukugo", "goku", "wago", "goyo"], hp: 16 },
   { id: "bukatsu", em: "🖋️", t: "部活", d: "表現力＋", cls: "b", stat: "hyogen", exp: "h",
     cats: ["bungaku", "giongo", "gairai", "bushu", "sanji", "kana"], hp: 15 },
 ];
@@ -345,27 +345,35 @@ function catPool(cats) { const p = QUESTIONS.filter(q => cats.includes(q.t)); re
    一巡しきるまで 同じ問題は 二度出さない（＝686問すべてが出る） */
 function pickQuestions(pool, n) {
   if (!G.seen) G.seen = {};
+  const due = lcDueList(WEAK, pool, Math.max(1, Math.round(n * 0.3)));
+  const dueIds = due.map(q => q.id);
   const bucket = {};
-  pool.forEach(q => { const c = G.seen[q.id] || 0; (bucket[c] = bucket[c] || []).push(q); });
+  pool.filter(q => !dueIds.includes(q.id)).forEach(q => { const c = G.seen[q.id] || 0; (bucket[c] = bucket[c] || []).push(q); });
+  n -= due.length;
   const out = [];
   Object.keys(bucket).map(Number).sort((a, b) => a - b).forEach(c => {
     if (out.length >= n) return;
     shuffle(bucket[c]).forEach(q => { if (out.length < n) out.push(q); });
   });
+  due.forEach(q => out.push(q));
   out.forEach(q => { G.seen[q.id] = (G.seen[q.id] || 0) + 1; });
   saveSeen();
   return shuffle(out);
 }
 const seenCount = () => G && G.seen ? Object.keys(G.seen).length : 0;
 /* 出題履歴は 周回をまたいで 引き継ぐ（何周かで 686問すべてに 出会える） */
+const WEAK_KEY = "kotonohaWeak";
+let WEAK = {};
+try { WEAK = JSON.parse(localStorage.getItem(WEAK_KEY) || "{}"); } catch (e) { WEAK = {}; }
+const saveWeak = () => { try { localStorage.setItem(WEAK_KEY, JSON.stringify(WEAK)); } catch (e) { } };
 const SEEN_KEY = "kotonohaSeen";
 const saveSeen = () => { try { localStorage.setItem(SEEN_KEY, JSON.stringify(G.seen)); } catch (e) { } };
 const loadSeen = () => { try { return JSON.parse(localStorage.getItem(SEEN_KEY) || "{}"); } catch (e) { return {}; } };
 function startQuiz(cm, who, n, isTest) {
   return new Promise(res => {
     QRES = res;
-    const pool = isTest ? QUESTIONS : catPool(cm.cats);
-    Q = { cm, who, qs: pickQuestions(pool, n), i: 0, ok: 0, combo: 0, best: 0, lock: false, isTest };
+    const qs = isTest ? jissenSet(QUESTIONS, G.seen, (p, k) => pickQuestions(p, k)) : pickQuestions(catPool(cm.cats), n);
+    Q = { cm, who, qs, i: 0, ok: 0, combo: 0, best: 0, lock: false, isTest };
     $("qTag").textContent = isTest ? "📝 テスト" : cm.em + " " + cm.t;
     $("qCheer").innerHTML = who ? `<span style="color:${CHARS[who].col}">${CHARS[who].em} ${CHARS[who].name}と いっしょ！</span>` : "";
     const bonus = [];
@@ -394,13 +402,25 @@ function nextQ() {
     box.appendChild(b);
   });
 }
-const CATNAME = { kaki: "漢字の書き", yomi: "漢字の読み", doon: "同じ読みの漢字", dokun: "同訓異字", goku: "説明文の重要語", kanyo: "慣用句", taigi: "対義語", ruigi: "類義語", yoji: "四字熟語", kotowaza: "ことわざ", bunpo: "ことばのきまり", bungaku: "文学史", keigo: "敬語", bushu: "部首", giongo: "擬音語・擬態語", goyo: "ことばの誤り", jukugo: "熟語の組み立て", sanji: "三字熟語", gairai: "外来語", fukushi: "呼応の副詞", wago: "ことばの意味", kana: "かなづかい" };
+const CATNAME = { kaki: "漢字の書き", yomi: "漢字の読み", doon: "同じ読みの漢字", dokun: "同訓異字", goku: "説明文の重要語", kanyo: "慣用句", taigi: "対義語", ruigi: "類義語", yoji: "四字熟語", kotowaza: "ことわざ", bunpo: "ことばのきまり", bungaku: "文学史", keigo: "敬語", bushu: "部首", giongo: "擬音語・擬態語", goyo: "ことばの誤り", jukugo: "熟語の組み立て", sanji: "三字熟語", gairai: "外来語", fukushi: "呼応の副詞", wago: "ことばの意味", kana: "かなづかい",
+  aimai: "あいまいな文", chugoku: "中国のことわざ", iro: "色の漢字", kokoro: "心・気・目の慣用表現", shoryaku: "省略語のもとの形", yojierr: "四字熟語の誤字訂正",
+  kaki2: "実践女子レベルの書き取り", yomi2: "慣用的な読み", shikibetsu: "同じ働きの言葉", bushuimi: "部首の名前と意味", yomikata: "熟語の読み方" };
+/* 学びカード（間違えたとき） */
+function showLearn(q, cb) {
+  $("lcCat").textContent = CATNAME[q.t] || "";
+  $("lcQ").innerHTML = q.q;
+  $("lcA").innerHTML = "こたえ： <b>" + q.a + "</b>";
+  $("lcBody").innerHTML = learnHTML(q, true);
+  const ov = $("learnOv"); ov.classList.add("on"); ov.querySelector(".lcbox").scrollTop = 0;
+  $("lcNext").onclick = () => { sfx.tap(); ov.classList.remove("on"); cb(); };
+}
 function ans(btn, chosen, q) {
   if (!Q || Q.lock) return;
   Q.lock = true; G.total++;
   if (chosen === q.a) {
     G.correct++; Q.ok++; Q.combo++; Q.best = Math.max(Q.best, Q.combo);
     G.bestCombo = Math.max(G.bestCombo, Q.combo);
+    if (WEAK[q.id]) { lcHit(WEAK, q.id); saveWeak(); }
     btn.classList.add("ok");
     if (Q.combo >= 3) { sfx.combo(Q.combo); const c = $("combo"); c.textContent = Q.combo + "れんぞく！ 🔥"; c.classList.remove("on"); void c.offsetWidth; c.classList.add("on"); }
     else sfx.ok();
@@ -408,7 +428,8 @@ function ans(btn, chosen, q) {
   } else {
     Q.combo = 0; sfx.ng(); btn.classList.add("ng");
     [...$("opts").children].forEach(b => { if (b.textContent === q.a) b.classList.add("ok"); });
-    setTimeout(() => say([L(null, `おしい！ こたえは「${q.a}」\n${q.h || ""}`)]).then(() => { Q.lock = false; adv(); }), 480);
+    lcMiss(WEAK, q.id); saveWeak();
+    setTimeout(() => showLearn(q, () => { Q.lock = false; adv(); }), 480);
   }
 }
 function adv() { Q.i++; if (Q.i >= Q.qs.length) endQuiz(); else nextQ(); }
@@ -576,7 +597,7 @@ async function doTest(title, memo) {
 }
 let TEST_TITLE = "", TEST_MEMO = "";
 async function endTest() {
-  const base = Q.ok * 8;
+  const base = Math.round(Q.ok / Q.qs.length * 80);
   const bonus = Math.round((G.st.kanji + G.st.goi + G.st.dokkai + G.st.hyogen) / 4 * .2);
   const score = clamp(base + bonus, 0, 100);
   const rank = testRank(score);
@@ -586,7 +607,7 @@ async function endTest() {
   if (score >= 80) { confetti(40); G.mood = 4; } else if (score < 40) { G.mood = clamp(G.mood - 1, 0, 4); }
   $("rBig").textContent = score >= 90 ? "🏆 学年トップクラス！" : score >= 75 ? "🎉 よくできました！" : score >= 55 ? "👍 まずまず！" : "💦 つぎ がんばろう";
   $("rScore").textContent = score + "点";
-  $("rSub").innerHTML = `${TEST_TITLE}<br>正解 ${Q.ok}/10　学年 <b>${rank}位</b>／200人`;
+  $("rSub").innerHTML = `${TEST_TITLE}<br>正解 ${Q.ok}/${Q.qs.length}　学年 <b>${rank}位</b>／200人`;
   $("rGain").innerHTML = `こくご偏差値 <span class="up">${hensachi()}</span><br>${TEST_MEMO || ""}`;
   show("result");
   $("rNext").onclick = async () => {
@@ -904,6 +925,7 @@ $("btnCont").onclick = () => {
   if (!s) { toast("セーブデータが ないよ"); return; }
   G = Object.assign(DEF(), s);
   G.place = {};
+  applyClub();
   renderMain();
 };
 $("btnAlbum").onclick = () => { sfx.tap(); renderAlbum(); show("album"); };

@@ -702,6 +702,7 @@ const FIXED = {
     G.aff.kaicho = clamp(G.aff.kaicho + 20, 0, 100);
     G.mood = 4; confetti(40);
   },
+  28: async () => { await doTest("2学期 中間テスト", "柏女祭の あとは 気持ちを 切りかえて！"); },
   31: async () => { await doTest("2学期 期末テスト", "後半戦の 手ごたえは？"); },
   35: async () => {
     await say([L(null, "🎄 2学期の 終業式、そして クリスマス。")]);
